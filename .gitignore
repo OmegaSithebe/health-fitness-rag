@@ -1,0 +1,16 @@
+.env
+.venv
+__pycache__/
+*.pyc
+.python-version
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
