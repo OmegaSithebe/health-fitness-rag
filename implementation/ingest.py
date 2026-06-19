@@ -7,33 +7,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone, ServerlessSpec
 
 load_dotenv(override=True)
 
 KNOWLEDGE_BASE = str(Path(__file__).parent.parent / "knowledge-base")
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-
-# Initialize Pinecone
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-
-# Use a separate index for fitness-health
-index_name = "fitness-health-main"
-
-# Create if missing
-if index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=index_name,
-        dimension=3072,
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1")
-    )
-
-# Connect to index
-index = pc.Index(index_name)
-
-NAMESPACE = "fitness-health"
+OUTPUT_FILE = Path(__file__).with_name("knowledge_base_cache.json")
 
 
 def fetch_documents():
@@ -64,35 +45,26 @@ def create_chunks(documents):
 
 
 def embed_and_prepare(chunks):
-    """Generate embeddings and prepare vectors for Pinecone."""
-    vectors = []
-    for i, doc in enumerate(chunks):
-        vec = embeddings.embed_query(doc.page_content)
-        vectors.append({
-            "id": f"doc-{i}",
-            "values": vec,
+    """Generate a lightweight cache for local retrieval."""
+    return [
+        {
+            "id": f"chunk-{i}",
+            "text": doc.page_content,
             "metadata": {
                 "source": doc.metadata.get("source", ""),
-                "text": doc.page_content,
                 "doc_type": doc.metadata.get("doc_type", ""),
-                "filename": os.path.basename(doc.metadata.get("source", ""))
-            }
-        })
-    return vectors
+                "filename": os.path.basename(doc.metadata.get("source", "")),
+            },
+        }
+        for i, doc in enumerate(chunks)
+    ]
 
 
-def insert_parallel(vectors, batch_size=100):
-    """Insert vectors into Pinecone in parallel."""
-    async def run_upserts():
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            loop = asyncio.get_running_loop()
-            tasks = []
-            for i in range(0, len(vectors), batch_size):
-                batch = vectors[i:i+batch_size]
-                tasks.append(loop.run_in_executor(executor, index.upsert, batch, NAMESPACE))
-            await asyncio.gather(*tasks)
+def write_cache(vectors):
+    """Persist a cache of chunks for local startup."""
+    import json
 
-    asyncio.run(run_upserts())
+    OUTPUT_FILE.write_text(json.dumps(vectors, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":
@@ -106,8 +78,8 @@ if __name__ == "__main__":
 
     print("🧠 Generating embeddings...")
     vectors = embed_and_prepare(chunks)
-    print(f"✅ Generated {len(vectors)} vectors")
+    print(f"✅ Prepared {len(vectors)} cached chunks")
 
-    print("📤 Inserting into Pinecone...")
-    insert_parallel(vectors)
-    print(f"🚀 Ingestion complete: {len(vectors)} vectors inserted (namespace={NAMESPACE})")
+    print(f"💾 Writing cache to {OUTPUT_FILE.name}...")
+    write_cache(vectors)
+    print(f"🚀 Ingestion complete: {len(vectors)} cached chunks written")

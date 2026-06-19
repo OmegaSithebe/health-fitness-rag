@@ -28,19 +28,8 @@ def chat(message, history):
 
 
 def main():
-    with gr.Blocks(
-        title="Fitness & Health Assistant",
-        theme=gr.themes.Soft(),
-        css="""
-        .gradio-container {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .chatbot-container {
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
-        """
-    ) as ui:
+    # Move theme and css to launch() instead of Blocks constructor
+    with gr.Blocks(title="Fitness & Health Assistant") as ui:
         gr.Markdown("""
         # 💪 Fitness & Health Assistant
 
@@ -57,6 +46,7 @@ def main():
 
         with gr.Row():
             with gr.Column(scale=2):
+                # Remove 'type' parameter - it's not needed in Gradio 6.0
                 chatbot = gr.Chatbot(
                     label="💬 Conversation",
                     height=500,
@@ -83,8 +73,18 @@ def main():
         practical, encouraging, and tailored to your needs.
         """)
 
-    ui.launch()
+    # Move theme and css here
+    ui.launch(theme=gr.themes.Soft(), css="""
+        .gradio-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .chatbot-container {
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+    """)
 
 
 if __name__ == "__main__":
     main()
+    

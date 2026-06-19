@@ -1,0 +1,41 @@
+Metadata-Version: 2.4
+Name: fitness-health-rag
+Version: 0.1.0
+Summary: A RAG-powered fitness and health assistant chatbot
+Requires-Python: <3.14,>=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: python-dotenv>=1.2.1
+Requires-Dist: gradio>=6.11.0
+Requires-Dist: langchain>=1.2.17
+Requires-Dist: langchain-core>=1.3.3
+Requires-Dist: langchain-community>=0.4.1
+Requires-Dist: langchain-openai>=1.2.1
+Requires-Dist: langchain-text-splitters>=1.1.0
+Requires-Dist: openai>=2.20.0
+Requires-Dist: tiktoken>=0.12.0
+Requires-Dist: litellm>=1.74.0
+Requires-Dist: pydantic>=2.0.0
+
+---
+title: Health Fitness Rag
+emoji: 🐨
+colorFrom: purple
+colorTo: pink
+sdk: gradio
+sdk_version: 6.18.0
+python_version: '3.11'
+app_file: app.py
+pinned: false
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+## Hugging Face deployment
+
+This app uses a local knowledge-base retriever and OpenAI for generation.
+
+Before launching the Space, add these secrets in Hugging Face:
+
+- `OPENAI_API_KEY`
+
+If you rebuild the knowledge base, run `uv run ingest.py` locally first so the cached chunks stay in sync with the markdown files.
